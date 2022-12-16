@@ -53,18 +53,23 @@
         canvas = document.getElementById('draw-area');
         ctx = canvas.getContext('2d');
         
-        canvas.addEventListener('mousemove', draw_canvas);
+        canvas.addEventListener('mousemove', moveListener);
+        canvas.addEventListener('touchmove', moveListener);
         // マウスをクリックしてる時
-            canvas.addEventListener('mousedown', function(e) {
+        var moveStart = function(e) {
             drawing = true;
             var rect = e.target.getBoundingClientRect();
             before_x = e.clientX - rect.left;
             before_y = e.clientY - rect.top;
-        });
+        }
+        canvas.addEventListener('mousedown', moveStart);
+        canvas.addEventListener('touchstart', moveStart);
         // マウスをクリックしてない時
-        canvas.addEventListener('mouseup', function() {
+        var moveEnd = function() {
             drawing = false;
-        });
+        }
+        canvas.addEventListener('mouseup', moveEnd);
+        canvas.addEventListener('ontouchend', moveEnd);
 
         document.addEventListener('keypress', keypress_event);
         function keypress_event(e) {
@@ -87,6 +92,16 @@
             return false; 
         }
     };
+
+    function moveListener(e) {
+        var e_;
+        if (e.clientX === undefined) {
+            e_ = { 'clientX': e.changedTouches[0].clientX , 'clientY': e.changedTouches[0].clientY }
+            draw_canvas(e_);
+        } else {
+            draw_canvas(e);
+        }
+    }
      
     // 描画の処理
     function draw_canvas(e) {
@@ -158,7 +173,7 @@
     <script>
         const video = document.getElementById("video")
         navigator.mediaDevices.getUserMedia({
-            video: true,
+            video: { width: 1920, height: 1080 },
             audio: false,
         }).then(stream => {
             video.srcObject = stream;
