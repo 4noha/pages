@@ -51,21 +51,31 @@
   // create socket
   var socketReady = false;
   var port = 9001;
-  var socket = io.connect('http://192.168.16.33:' + port + '/');
+  var uri = new URL(window.location.href);
+  //var socket = io.connect('http://' + uri.hostname + ':' + port + '/');
+  var connection = new WebSocket("wss://4h2eqyh61m.execute-api.us-west-2.amazonaws.com/production", "unkbrbr");
   // socket: channel connected
-  socket.on('connect', onOpened)
-        .on('message', onMessage);
+  //socket.on('connect', onOpened)
+  //      .on('message', onMessage);
+  connection.onopen = onOpened;
+  connection.onmessage = onMessage;
  
   function onOpened(evt) {
     console.log('socket opened.');
+    let json = { "action":"sendmessage", "data":{"roomId":"123456", "message": ""} };
+    connection.send(JSON.stringify(json));
     socketReady = true;
   }
  
   // socket: accept connection request
   function onMessage(evt) {
+    console.log(evt);
+    evt = JSON.parse(evt.data);
+    if(evt.message != "") evt = evt.message;
+    console.log(evt);
     if (evt.type === 'offer') {
       console.log("Received offer, set offer, sending answer....")
-      onOffer(evt);	  
+      onOffer(evt);
     } else if (evt.type === 'answer' && peerStarted) {
       console.log('Received answer, settinng answer SDP');
 	  onAnswer(evt);
@@ -116,61 +126,66 @@
   
   function onOffer(evt) {
     console.log("Received offer...")
-	console.log(evt);
+	  console.log(evt);
     setOffer(evt);
-	sendAnswer(evt);
-	peerStarted = true;  // ++
+	  sendAnswer(evt);
+	  peerStarted = true;  // ++
   }
   
   function onAnswer(evt) {
     console.log("Received Answer...")
-	console.log(evt);
-	setAnswer(evt);
+	  console.log(evt);
+	  setAnswer(evt);
   }
   
   function onCandidate(evt) {
     var candidate = new RTCIceCandidate({sdpMLineIndex:evt.sdpMLineIndex, sdpMid:evt.sdpMid, candidate:evt.candidate});
     console.log("Received Candidate...")
-	console.log(candidate);
+	  console.log(candidate);
     peerConnection.addIceCandidate(candidate);
   }
  
   function sendSDP(sdp) {
     var text = JSON.stringify(sdp);
-	console.log("---sending sdp text ---");
-	console.log(text);
-	textForSendSDP.value = text;
-	
-	// send via socket
-	socket.send(sdp);
+    console.log("---sending sdp text ---");
+    console.log(text);
+    textForSendSDP.value = text;
+    
+    // send via socket
+    //socket.send(sdp);
+    let json = { "action":"sendmessage", "data":{"roomId":"123456", "message": sdp} };
+    console.log(json);
+    connection.send(JSON.stringify(json));
   }
   
   function sendCandidate(candidate) {
     var text = JSON.stringify(candidate);
-	console.log("---sending candidate text ---");
-	console.log(text);
-	textForSendICE.value = (textForSendICE.value + CR + iceSeparator + CR + text + CR);
-	textForSendICE.scrollTop = textForSendICE.scrollHeight;
-	
-	// send via socket
-	socket.send(candidate);
+    console.log("---sending candidate text ---");
+    console.log(text);
+    textForSendICE.value = (textForSendICE.value + CR + iceSeparator + CR + text + CR);
+    textForSendICE.scrollTop = textForSendICE.scrollHeight;
+    
+    // send via socket
+    //socket.send(candidate);
+    let json = { "action":"sendmessage", "data":{"roomId":"123456", "message": candidate} };
+    connection.send(JSON.stringify(json));
   }
   
   // ---------------------- video handling -----------------------
   // start local video
   function startVideo() {
-	navigator.webkitGetUserMedia({video: true, audio: false},
-    function (stream) { // success
-      localStream = stream;
-      localVideo.srcObject = stream;
-      localVideo.play();
-	  localVideo.volume = 0;
-    },
-    function (error) { // error
-      console.error('An error occurred: [CODE ' + error.code + ']');
-      return;
-    }
-	);
+	  navigator.webkitGetUserMedia({video: true, audio: false},
+      function (stream) { // success
+        localStream = stream;
+        localVideo.srcObject = stream;
+        localVideo.play();
+        localVideo.volume = 0;
+      },
+      function (error) { // error
+        console.error('An error occurred: [CODE ' + error.code + ']');
+        return;
+      }
+    );
   }
  
   // stop local video
