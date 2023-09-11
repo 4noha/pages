@@ -1,33 +1,97 @@
-<link href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" rel="stylesheet">
-<script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
+<html>
+  <head>
+    <style type="text/css">
+      body {
+        font-family: roboto;
+        margin: 2em;
+        color: #3d3d3d;
+        --mdc-theme-primary: #007f8b;
+        --mdc-theme-on-primary: #f1f3f4;
+      }
 
-<h1>Interactive Segmentation using the MediaPipe Interactive Segmentation task</h1>
+      h1 {
+        color: #007f8b;
+      }
 
-<section id="demos" class="invisible">
-  <h2>Demo: Interactive Segmentation</h2>
-  <p><b>Click on the objects in the images below</b> to see predicted segmentations in the images.</p>
+      h2 {
+        clear: both;
+      }
 
-  <div class="detectOnClick">
-    <img src="https://assets.codepen.io/9177687/coupledog.jpeg" width="100%" crossorigin="anonymous" title="Click to see segmentation" />
-    <canvas class="canvas-segmentation"></canvas>
-    <span class="click-point"></span>
-  </div>
-  <div class="detectOnClick">
-    <img src="https://assets.codepen.io/9177687/cows-7880154_1280.jpg" width="100%" crossorigin="anonymous" title="Click to get classification!" />
-    <canvas class="canvas-segmentation"></canvas>
-    <span class="click-point"></span>
-  </div>
-  <div style="top: 30px; position: relative; clear: both;">
-    <div style="margin: 5px"><b>Choose your own image</b> from local storage to detect segmentation in the image.</div>
-    <div>
-      <div class="input">
-        <button class="mdc-button mdc-button--raised" onclick="document.getElementById('uploadFile').click()">
-          <span class="mdc-button__label">SELECT IMAGE</span>
-        </button>
-        <input id="uploadFile" type="file" accept=".jpeg,.png,.jpg" style="display:none">
+      section {
+        opacity: 1;
+        transition: opacity 500ms ease-in-out;
+      }
+
+      .invisible {
+        opacity: 0.2;
+      }
+
+      .detectOnClick {
+        position: relative;
+        float: left;
+        width: 48%;
+        margin: 2% 1%;
+        cursor: pointer;
+      }
+
+      .canvas-segmentation {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+      }
+
+      .click-point {
+        position: absolute;
+        z-index: 1;
+        width: 8px;
+        height: 8px;
+        background-color: #ff3030;
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+        display: none;
+      }
+
+      #imageUpload {
+        display: none;
+      }
+    </style>
+    <script type="module" src="./material-components-web.min.js"></script>
+  </head>
+
+  <h1>Interactive Segmentation using the MediaPipe Interactive Segmentation task</h1>
+
+  <section id="demos" class="invisible">
+    <h2>Demo: Interactive Segmentation</h2>
+    <p><b>Click on the objects in the images below</b> to see predicted segmentations in the images.</p>
+
+    <div class="detectOnClick">
+      <img src="https://assets.codepen.io/9177687/coupledog.jpeg" width="100%" crossorigin="anonymous" title="Click to see segmentation" />
+      <canvas class="canvas-segmentation"></canvas>
+      <span class="click-point"></span>
+    </div>
+    <div class="detectOnClick">
+      <img src="https://assets.codepen.io/9177687/cows-7880154_1280.jpg" width="100%" crossorigin="anonymous" title="Click to get classification!" />
+      <canvas class="canvas-segmentation"></canvas>
+      <span class="click-point"></span>
+    </div>
+    <div style="top: 30px; position: relative; clear: both;">
+      <div style="margin: 5px"><b>Choose your own image</b> from local storage to detect segmentation in the image.</div>
+      <div>
+        <div class="input">
+          <button class="mdc-button mdc-button--raised" onclick="document.getElementById('uploadFile').click()">
+            <span class="mdc-button__label">SELECT IMAGE</span>
+          </button>
+          <input id="uploadFile" type="file" accept=".jpeg,.png,.jpg" style="display:none">
+        </div>
+        <div class="detectOnClick" style="  width: 80%;">
+          <img id="imageUpload" width="100%" crossorigin="anonymous" title="Click to segment image" />
+          <canvas class="canvas-segmentation"></canvas>
+          <span class="click-point"></span>
+        </div>
       </div>
-      <div class="detectOnClick" style="  width: 80%;">
-        <img id="imageUpload" width="100%" crossorigin="anonymous" title="Click to segment image" />
-        <canvas class="canvas-segmentation"></canvas>
-        <span class="click-point"></span>
-      </div>
+    </div>
+  </section>
+</html>
