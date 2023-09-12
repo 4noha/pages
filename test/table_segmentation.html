@@ -65,7 +65,7 @@
     <p><b>Click on the objects in the images below</b> to see predicted segmentations in the images.</p>
 
     <div class="detectOnClick">
-      <img src="https://assets.codepen.io/9177687/coupledog.jpeg" width="100%" crossorigin="anonymous" title="Click to see segmentation" />
+      <img src="https://assets.codepen.io/9177687/coupledog.jpeg" width="100%" crossorigin="anonymous" title="Click to see segmentation" id="img" />
       <canvas class="canvas-segmentation"></canvas>
       <span class="click-point"></span>
     </div>
@@ -82,6 +82,9 @@
             <span class="mdc-button__label">SELECT IMAGE</span>
           </button>
           <input id="uploadFile" type="file" accept=".jpeg,.png,.jpg" style="display:none">
+          <button class="mdc-button mdc-button--raised" onclick="deployUnity()">
+            <span class="mdc-button__label">SELECT IMAGE</span>
+          </button>
         </div>
         <div class="detectOnClick" style="  width: 80%;">
           <img id="imageUpload" width="100%" crossorigin="anonymous" title="Click to segment image" />
