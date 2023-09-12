@@ -64,16 +64,13 @@
   <section id="demos" class="invisible">
     <p><b>Click on the objects in the images below</b> to see predicted segmentations in the images.</p>
 
-    <div class="detectOnClick">
-      <img src="https://assets.codepen.io/9177687/coupledog.jpeg" width="100%" crossorigin="anonymous" title="Click to see segmentation" id="img" />
+    <div class="detectOnClick" style="  width: 100%;">
+      <img id="imageUpload" width="100%" crossorigin="anonymous" title="Click to segment image" id="img" />
+      <canvas class="canvas-segmentation"></canvas>
       <canvas class="canvas-segmentation" id="canvas"></canvas>
       <span class="click-point"></span>
     </div>
-    <div class="detectOnClick">
-      <img src="https://assets.codepen.io/9177687/cows-7880154_1280.jpg" width="100%" crossorigin="anonymous" title="Click to get classification!" />
-      <canvas class="canvas-segmentation"></canvas>
-      <span class="click-point"></span>
-    </div>
+
     <div style="top: 30px; position: relative; clear: both;">
       <div style="margin: 5px"><b>Choose your own image</b> from local storage to detect segmentation in the image.</div>
       <div>
@@ -85,11 +82,6 @@
           <button class="mdc-button mdc-button--raised" id="deployButton">
             <span class="mdc-button__label">Deploy Unity</span>
           </button>
-        </div>
-        <div class="detectOnClick" style="  width: 80%;">
-          <img id="imageUpload" width="100%" crossorigin="anonymous" title="Click to segment image" />
-          <canvas class="canvas-segmentation"></canvas>
-          <span class="click-point"></span>
         </div>
       </div>
     </div>
