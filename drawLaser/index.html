@@ -274,7 +274,7 @@ M2
 (end)
 %
   `;
-  console.log(a);
+  //console.log(a);
   a = a.split('\n');
 
   // strのポインタを進めながら、数値を取得する
@@ -297,28 +297,13 @@ M2
         let ptr = 0;
         let x, y, z;
         if((ptr = strs[i].indexOf('X')) != -1){
-          let num = '';
-          ptr++;
-          for(;/[-.\d]/.test(strs[i][ptr]);ptr++) {
-            num += strs[i][ptr];
-          }
-          x = parseFloat(num);
+          [x, ptr] = getNum(strs[i], ptr);
         }
         if((ptr = strs[i].indexOf('Y')) != -1){
-          let num = '';
-          ptr++;
-          for(;/[-.\d]/.test(strs[i][ptr]);ptr++) {
-            num += strs[i][ptr];
-          }
-          y = parseFloat(num);
+          [y, ptr] = getNum(strs[i], ptr);
         }
         if((ptr = strs[i].indexOf('Z')) != -1){
-          let num = '';
-          ptr++;
-          for(;/[-.\d]/.test(strs[i][ptr]);ptr++) {
-            num += strs[i][ptr];
-          }
-          z = parseFloat(num);
+          [z, ptr] = getNum(strs[i], ptr);
         }
         cmds.push(['G00', x, y, z]);
       }
@@ -328,44 +313,19 @@ M2
         let ptr = 0;
         let x, y, z, i_, j;
         if((ptr = strs[i].indexOf('X')) != -1){
-          let num = '';
-          ptr++;
-          for(;/[-.\d]/.test(strs[i][ptr]);ptr++) {
-            num += strs[i][ptr];
-          }
-          x = parseFloat(num);
+          [x, ptr] = getNum(strs[i], ptr);
         }
         if((ptr = strs[i].indexOf('Y')) != -1){
-          let num = '';
-          ptr++;
-          for(;/[-.\d]/.test(strs[i][ptr]);ptr++) {
-            num += strs[i][ptr];
-          }
-          y = parseFloat(num);
+          [y, ptr] = getNum(strs[i], ptr);
         }
         if((ptr = strs[i].indexOf('Z')) != -1){
-          let num = '';
-          ptr++;
-          for(;/[-.\d]/.test(strs[i][ptr]);ptr++) {
-            num += strs[i][ptr];
-          }
-          z = parseFloat(num);
+          [z, ptr] = getNum(strs[i], ptr);
         }
         if((ptr = strs[i].indexOf('I')) != -1){
-          let num = '';
-          ptr++;
-          for(;/[-.\d]/.test(strs[i][ptr]);ptr++) {
-            num += strs[i][ptr];
-          }
-          i_ = parseFloat(num);
+          [i_, ptr] = getNum(strs[i], ptr);
         }
         if((ptr = strs[i].indexOf('J')) != -1){
-          let num = '';
-          ptr++;
-          for(;/[-.\d]/.test(strs[i][ptr]);ptr++) {
-            num += strs[i][ptr];
-          }
-          j = parseFloat(num);
+          [j, ptr] = getNum(strs[i], ptr);
         }
         cmds.push([strs[i].substring(0, 3), x, y, z, i_, j]);
       }
@@ -379,8 +339,15 @@ M2
       return Math.atan2(y2 - y,x2 - x);
   }
   // gcodeを一定の移動量ごとに分割する
-  var splitTravel = function(cmd, travel){
-    return [[cmd], 0];
+  var splitTravel = function(cmd, sPoint, travel){
+    if(cmd[3]>=0) return [[cmd], 0];
+    let cmds = [];
+    if(cmd[0] != 'G00'){
+      for(;;){
+
+      }
+    };
+    return [cmds, 0];
   }
   // gcodeを一定の移動量に分割しながら描画する
   var playCmds = async function(cmds) {
@@ -403,23 +370,19 @@ M2
         if(cmds[i][1] !== undefined) currentPtr[0] = cmds[i][1]*mag;
         if(cmds[i][2] !== undefined) currentPtr[1] = maxY-cmds[i][2]*mag;
         if(cmds[i][3] !== undefined) currentPtr[2] = cmds[i][3];
+        //[splittedCmds, mod] = splitTravel(cmds[i], 3);
         splittedCmds = [cmds[i]];
-        //splittedCmds, mod = splitTravel(cmds[i], 3);
       }
       if(/G0[23]/.test(cmds[i][0])){
         if(cmds[i][1] !== undefined) currentPtr[0] = cmds[i][1]*mag;
         if(cmds[i][2] !== undefined) currentPtr[1] = maxY-cmds[i][2]*mag;
         if(cmds[i][3] !== undefined) currentPtr[2] = cmds[i][3];
         splittedCmds = [cmds[i]];
-        //splitTravel();
       }
       if(currentPtr[2] >= 0){
         cmds_.push(cmds[i]);
-        console.log(cmds[i]);
       } else {
-        console.log(splittedCmds);
         for(let j=0;j<splittedCmds.length;j++){
-          console.log("huga");
           cmds_.push(splittedCmds[j]);
           drawGcode(cmds_, maxX, maxY, minX, minY);
           await new Promise(resolve => setTimeout(resolve, 100));
