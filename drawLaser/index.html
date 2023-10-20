@@ -277,6 +277,7 @@ M2
   console.log(a);
   a = a.split('\n');
 
+  // strのポインタを進めながら、数値を取得する
   var getNum = function(str, ptr) {
     let num = '';
     ptr++;
@@ -285,6 +286,8 @@ M2
     }
     return [parseFloat(num), ptr];
   }
+
+  // gcode(文字列)を配列に変換する
   var perseGcode = function(strs) {
     cmds = [];
     for(let i=0;i<strs.length;i++) {
@@ -371,12 +374,15 @@ M2
     return cmds;
   }
   cmds = perseGcode(a);
+  // 2点間の角度を求める
   let getRadian = function(x, y, x2, y2) {
       return Math.atan2(y2 - y,x2 - x);
   }
+  // gcodeを一定の移動量ごとに分割する
   var splitTravel = function(cmd, travel){
     return [[cmd], 0];
   }
+  // gcodeを一定の移動量に分割しながら描画する
   var playCmds = async function(cmds) {
     let mag = 0.5;
     let maxX=NaN, maxY=NaN, minX=NaN, minY=NaN;
@@ -415,14 +421,15 @@ M2
         for(let j=0;j<splittedCmds.length;j++){
           console.log("huga");
           cmds_.push(splittedCmds[j]);
-          drawSvg(cmds_, maxX, maxY, minX, minY);
+          drawGcode(cmds_, maxX, maxY, minX, minY);
           await new Promise(resolve => setTimeout(resolve, 100));
         }
       }
       i++;
     }
   }
-  var drawSvg = function(cmds, maxX=NaN, maxY=NaN, minX=NaN, minY=NaN) {
+  // gcode描画
+  var drawGcode = function(cmds, maxX=NaN, maxY=NaN, minX=NaN, minY=NaN) {
     //context.fillStyle = '#ffffff';
     context.strokeStyle = '#ffffff';
     context.clearRect(0, 0, canvas.width, canvas.height);
