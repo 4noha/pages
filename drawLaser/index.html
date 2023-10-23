@@ -292,7 +292,6 @@ M2
     cmds = [];
     for(let i=0;i<strs.length;i++) {
       if (/G0[01]/.test(strs[i])) {
-        console.log(strs[i]);
         let cmd = [];
         let ptr = 0;
         let x, y, z;
@@ -308,7 +307,6 @@ M2
         cmds.push(['G00', x, y, z]);
       }
       if (/G0[23]/.test(strs[i])) {
-        console.log(strs[i]);
         let cmd = [];
         let ptr = 0;
         let x, y, z, i_, j;
@@ -330,7 +328,6 @@ M2
         cmds.push([strs[i].substring(0, 3), x, y, z, i_, j]);
       }
     }
-    console.log(cmds);
     return cmds;
   }
   cmds = perseGcode(a);
@@ -342,16 +339,24 @@ M2
   var splitTravel = function(cmd, sPoint, travel){
     if(cmd[3]>=0) return [[cmd], 0];
     let cmds = [];
-    if(cmd[0] != 'G00'){
-      for(;;){
-
+    let long = Math.sqrt( Math.pow( cmd[1]-sPoint[0], 2 ) + Math.pow( cmd[2]-sPoint[1], 2 ) );
+    if(cmd[0] == 'G00'){
+      let ratio = long/travel;
+      let count = Math.trunc(long/travel);
+      for (let distance = 0; distance <= long; distance += travel) {
+        const ratio = isNaN(distance / long) ? 0 : distance / long;
+        const pointX = sPoint[0] + ratio * (cmd[1] - sPoint[0]);
+        const pointY = sPoint[1] + ratio * (cmd[2] - sPoint[1]);
+        cmds.push([cmd[0], pointX, pointY, cmd[3]]);
       }
     };
-    return [cmds, 0];
+    console.log("Cmds:", cmds);
+    return [cmds, long%travel];
   }
   // gcodeを一定の移動量に分割しながら描画する
   var playCmds = async function(cmds) {
     let mag = 0.5;
+    let travel = 3;
     let maxX=NaN, maxY=NaN, minX=NaN, minY=NaN;
     for(let i=0;i<cmds.length;i++) {
       if (cmds[i][0] == 'G00') {
@@ -362,20 +367,19 @@ M2
       }
     }
     let cmds_ = [];
-    let currentPtr = [-300, -300, 5];
+    let currentPtr = [0, 0, 5];
     for(let i=0;i<cmds.length;) {
       let splittedCmds = [];
       let mod = 0;
       if(cmds[i][0] == 'G00'){
-        if(cmds[i][1] !== undefined) currentPtr[0] = cmds[i][1]*mag;
-        if(cmds[i][2] !== undefined) currentPtr[1] = maxY-cmds[i][2]*mag;
+        [splittedCmds, mod] = splitTravel(cmds[i], currentPtr, travel);
+        if(cmds[i][1] !== undefined) currentPtr[0] = cmds[i][1];
+        if(cmds[i][2] !== undefined) currentPtr[1] = cmds[i][2];
         if(cmds[i][3] !== undefined) currentPtr[2] = cmds[i][3];
-        //[splittedCmds, mod] = splitTravel(cmds[i], 3);
-        splittedCmds = [cmds[i]];
-      }
-      if(/G0[23]/.test(cmds[i][0])){
-        if(cmds[i][1] !== undefined) currentPtr[0] = cmds[i][1]*mag;
-        if(cmds[i][2] !== undefined) currentPtr[1] = maxY-cmds[i][2]*mag;
+        console.log("splittedCmds:", splittedCmds);
+      }else if(/G0[23]/.test(cmds[i][0])){
+        if(cmds[i][1] !== undefined) currentPtr[0] = cmds[i][1];
+        if(cmds[i][2] !== undefined) currentPtr[1] = cmds[i][2];
         if(cmds[i][3] !== undefined) currentPtr[2] = cmds[i][3];
         splittedCmds = [cmds[i]];
       }
@@ -393,10 +397,8 @@ M2
   }
   // gcode描画
   var drawGcode = function(cmds, maxX=NaN, maxY=NaN, minX=NaN, minY=NaN) {
-    //context.fillStyle = '#ffffff';
     context.strokeStyle = '#ffffff';
     context.clearRect(0, 0, canvas.width, canvas.height);
-    console.log(canvas.width, canvas.height);
     let currentPtr = [-300, -300, 5];
     let mag = 0.5;
     for(let i=0;i<cmds.length;i++) {
@@ -408,7 +410,6 @@ M2
       }
     }
     maxY += 300;
-    //maxY = 0;
     context.beginPath();
     for(let i=0;i<cmds.length;i++) {
       if (cmds[i][0] == 'G00') {
@@ -417,9 +418,9 @@ M2
         if(cmds[i][3] !== undefined) currentPtr[2] = cmds[i][3];
         if(currentPtr[2] < 0 && (cmds[i][1] || cmds[i][2])) {
           context.lineTo(currentPtr[0], currentPtr[1]);
-          console.log("lineTo", currentPtr[0], currentPtr[1]);
+          //console.log("lineTo", currentPtr[0], currentPtr[1]);
         } else {
-          console.log("moveTo", currentPtr[0], currentPtr[1]);
+          //console.log("moveTo", currentPtr[0], currentPtr[1]);
         }
         context.moveTo(currentPtr[0], currentPtr[1]);
       }
@@ -428,10 +429,10 @@ M2
         if(cmds[i][2] !== undefined) currentPtr[1] = maxY-cmds[i][2]*mag;
         if(cmds[i][3] !== undefined) currentPtr[2] = cmds[i][3];
         if(currentPtr[2] < 0) {
-          console.log("bezierCurveTo", currentPtr[0], currentPtr[1], currentPtr[0], currentPtr[1], currentPtr[0], currentPtr[1]);
+          //console.log("bezierCurveTo", currentPtr[0], currentPtr[1], currentPtr[0], currentPtr[1], currentPtr[0], currentPtr[1]);
           context.bezierCurveTo(currentPtr[0], currentPtr[1], currentPtr[0], currentPtr[1], currentPtr[0], currentPtr[1]);
         } else {
-          console.log("moveTo", currentPtr[0], currentPtr[1]);
+          //console.log("moveTo", currentPtr[0], currentPtr[1]);
         }
         context.moveTo(currentPtr[0], currentPtr[1]);
       }
