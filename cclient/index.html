@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>cclient</title>
+  <style>
+    /* スタイルの追加 */
+    body {
+        background-color: black;
+        color: white;
+    }
+    #video-container {
+      width: 640px;
+      margin: 0 auto;
+    }
+    #controller {
+      width: 640px;
+      margin: 0 auto;
+    }
+    #shell-container {
+      width: 640px;
+      margin: 20px auto;
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
+  </style>
+  <script type="module" src="./jquery.js"></script>
+</head>
+<body>
+
+  <div id="shell-container" style="height: 300px; overflow: auto;">
+    <div id="chat-output" style="height: 275px; overflow: auto;"></div>
+    <input type="text" id="user-input" placeholder="Imput message..." style="width: 550px;">
+    <button id="send-button">送信</button>
+  </div>
+
+  <div id="video-container">
+    <video width="640" height="360" controls>
+      <source src="sample.mp4" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+  </div>
+  <div id="controller">
+    <input type="text" id="playCount" style="width: 30px;" text="0" readonly> play
+    <button id="moveX">X move</button>
+    <button id="moveY">Y move</button>
+  </div>
+
+  <script>
+    //var connection = new WebSocket("wss://wkc8zyqg5d.execute-api.ap-northeast-1.amazonaws.com/production");
+    connection = new WebSocket("wss://wkc8zyqg5d.execute-api.ap-northeast-1.amazonaws.com/production");
+    connection.onopen = function(event) {
+        console.log("接続しました。");
+        console.log(event);
+    };
+    connection.onerror = function(error) {
+        console.log("エラー発生");
+        console.log(error);
+    };
+    connection.onmessage = function(event) {
+        console.log("メッセージ受信");
+        console.log(event);
+    };
+
+    function processUserInput() {
+      const userInput = document.getElementById("user-input").value;
+      const chatOutput = document.getElementById("chat-output");
+      chatOutput.innerHTML += `<strong>$</strong> ${userInput}<br />`;
+
+      document.getElementById("user-input").value = "";
+    }
+
+    document.getElementById("send-button").addEventListener("click", processUserInput);
+    document.getElementById("user-input").addEventListener("keypress", function(event) {
+      if (event.key === "Enter") {
+        processUserInput();
+      }
+    });
+  </script>
+</body>
+</html>
