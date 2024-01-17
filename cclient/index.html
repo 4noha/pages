@@ -77,10 +77,24 @@
         }
         try {
           data = JSON.parse(event.data);
-          if (data.cmd == "ready") {
+          if (data.cmd == "xlamp") {
+            if(data.value == 1){
+              document.getElementById("moveX").style.backgroundColor = "#FFFF88 ";
+            }else{
+              document.getElementById("moveX").style.backgroundColor = "#e7e7e7";
+            }
+          }else if (data.cmd == "ylamp") {
+            if(data.value == 1){
+              document.getElementById("moveY").style.backgroundColor = "#FFFF88 ";
+            }else{
+              document.getElementById("moveY").style.backgroundColor = "#e7e7e7";
+            }
+          }else if (data.cmd == "ready") {
             connection.send(`{ "action": "sendmessage", "data": {"cmd": "ready"}}`);
             console.log('-> %s', `{ "action": "sendmessage", "data": {"cmd": "ready"}}`);
           }else if (data.clientSetting) {
+            document.getElementById("moveX").style.backgroundColor = "#e7e7e7";
+            document.getElementById("moveY").style.backgroundColor = "#e7e7e7";
             document.getElementById("startButton").style.visibility = "visible";
             document.getElementById("video-container").style.visibility = "visible";
             document.getElementById("controller").style.visibility = "visible";
