@@ -70,7 +70,7 @@
         console.log(event);
         if (event.data == "authenticated.") {
           const chatOutput = document.getElementById("chat-output");
-          chatOutput.innerHTML += `<strong>$</strong> Logged In. Please wait or Reload or Unavailable.<br />`;
+          chatOutput.innerHTML += `<strong>$</strong> Logged In. Please wait a mitute or Reload or Unavailable.<br />`;
           connection.send(`{ "action": "sendmessage", "data": {"cmd": "hello"}}`);
           console.log('-> %s', `{ "action": "sendmessage", "data": {"cmd": "hello"}}`);
           return;

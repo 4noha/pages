@@ -8,10 +8,12 @@ let signalingKey = null;
 const options = {};
 const remoteVideo = document.querySelector('#remote-video');
 let conn;
+const music = new Audio('./hatsurichan-fx.mp3');
 const disconnect = () => {
   if (conn) {
     conn.disconnect();
   }
+  music.pause();
   document.getElementById("video-container").style.visibility = "hidden";
   document.getElementById("controller").style.visibility = "hidden";
   document.getElementById("startButton").style.visibility = "hidden";
@@ -39,6 +41,7 @@ const startConn = async () => {
       console.log('-> %s', `{ "action": "sendmessage", "data": {"cmd": "go"} }`);
       remoteVideo.srcObject = e.stream;
     });
+    music.play();
   } catch(e) {
     console.log(e);
     connection.send(`{ "action": "sendmessage", "data": {"cmd": "disconnect"} }`);
