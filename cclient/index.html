@@ -7,14 +7,17 @@
     body {
         background-color: black;
         color: white;
+        position: relative;
     }
     #video-container {
       width: 640px;
       margin: 0 auto;
+      text-align: center;
     }
     #controller {
       width: 640px;
       margin: 0 auto;
+      text-align: center;
     }
     #shell-container {
       width: 640px;
@@ -24,49 +27,127 @@
     }
   </style>
   <script type="module" src="./jquery.js"></script>
+  <script src="./ayame.js" defer></script>
+  <script src="./qs.min.js" defer></script>
+  <script src="./main.js" defer></script>
 </head>
 <body>
 
   <div id="shell-container" style="height: 300px; overflow: auto;">
-    <div id="chat-output" style="height: 275px; overflow: auto;"></div>
+    <div id="chat-output" style="height: 275px;align-items:flex-end;overflow:auto;"></div>
     <input type="text" id="user-input" placeholder="Imput message..." style="width: 550px;">
-    <button id="send-button">送信</button>
+    <button id="send-button">submit</button>
   </div>
 
-  <div id="video-container">
-    <video width="640" height="360" controls>
-      <source src="sample.mp4" type="video/mp4">
+  <div id="video-container" style="visibility: hidden;">
+    <video id="remote-video" autoplay playsinline controls style="width: 640px; height: 480px; border: 1px solid black;">
       Your browser does not support the video tag.
     </video>
   </div>
-  <div id="controller">
-    <input type="text" id="playCount" style="width: 30px;" text="0" readonly> play
-    <button id="moveX">X move</button>
-    <button id="moveY">Y move</button>
+  <div id="controller" style="visibility: hidden;">
+    <input type="text" id="playCount" style="width:30px;" readonly> play
+    <button id="moveX" onmousedown="xDown()" onmouseup="xUp()">X move</button>
+    <button id="moveY" onmousedown="yDown()" onmouseup="yUp()">Y move</button>
   </div>
+  <button id="startButton" onclick="startConn();" style="width:600px;height:300px;position:absolute;top:0;left:0;right:0;margin:auto;visibility:hidden;">
+    <p>このボタンを押したらスタートします</p>
+    <p>Press this button to start.</p>
+  </button>
 
   <script>
+    xok = false;
+    yok = false;
+    document.getElementById("playCount").value = 0;
     //var connection = new WebSocket("wss://wkc8zyqg5d.execute-api.ap-northeast-1.amazonaws.com/production");
     connection = new WebSocket("wss://wkc8zyqg5d.execute-api.ap-northeast-1.amazonaws.com/production");
     connection.onopen = function(event) {
-        console.log("接続しました。");
-        console.log(event);
     };
     connection.onerror = function(error) {
-        console.log("エラー発生");
-        console.log(error);
+        //console.log("エラー発生");
+        //console.log(error);
     };
     connection.onmessage = function(event) {
-        console.log("メッセージ受信");
         console.log(event);
+        if (event.data == "authenticated.") {
+          const chatOutput = document.getElementById("chat-output");
+          chatOutput.innerHTML += `<strong>$</strong> Logged In. Please wait or Reload or Unavailable.<br />`;
+          connection.send(`{ "action": "sendmessage", "data": {"cmd": "hello"}}`);
+          console.log('-> %s', `{ "action": "sendmessage", "data": {"cmd": "hello"}}`);
+          return;
+        }
+        try {
+          data = JSON.parse(event.data);
+          if (data.cmd == "ready") {
+            connection.send(`{ "action": "sendmessage", "data": {"cmd": "ready"}}`);
+            console.log('-> %s', `{ "action": "sendmessage", "data": {"cmd": "ready"}}`);
+          }else if (data.clientSetting) {
+            document.getElementById("startButton").style.visibility = "visible";
+            document.getElementById("video-container").style.visibility = "visible";
+            document.getElementById("controller").style.visibility = "visible";
+            //connection.send(`{ "action": "sendmessage", "data": {"cmd": "go"}}`);
+            //console.log('-> %s', `{ "action": "sendmessage", "data": {"cmd": "go"}}`);
+            setting = data.clientSetting;
+          }else if (data.cmd == "disconnect") {
+            const chatOutput = document.getElementById("chat-output");
+            chatOutput.innerHTML += `<strong>$</strong> End your Game.<br />`;
+            disconnect();
+          }else if (data.cmd == "xready") {
+            const chatOutput = document.getElementById("chat-output");
+            chatOutput.innerHTML += `<strong>$</strong> X Button Ready.<br />`;
+            xok = true;
+          }else if (data.cmd == "yready") {
+            const chatOutput = document.getElementById("chat-output");
+            chatOutput.innerHTML += `<strong>$</strong> Y Button Ready.<br />`;
+            yok = true;
+          }else if (data.cmd == "credit") {
+            const chatOutput = document.getElementById("chat-output");
+            chatOutput.innerHTML += `<strong>$</strong> GET CREDIT ${data.credit}.<br />`;
+            document.getElementById("playCount").value = data.credit;
+          }else if (data.cmd == "clear") {
+            const chatOutput = document.getElementById("chat-output");
+            chatOutput.innerHTML += `<strong>$</strong> <font color="green">Congratulations!!!!!!!!!!!!</font><br />`;
+          }else if (data.cmd == "ping") {
+            connection.send(`{ "action": "sendmessage", "data": {"cmd": "pong"}}`);
+          }
+        } catch (error) {
+          console.log(error);
+        }
     };
 
     function processUserInput() {
       const userInput = document.getElementById("user-input").value;
       const chatOutput = document.getElementById("chat-output");
       chatOutput.innerHTML += `<strong>$</strong> ${userInput}<br />`;
+      connection.send(`{ "action": "sendmessage", "data": "${userInput}"}`);
+      console.log('-> %s', `{ "action": "sendmessage", "data": "${userInput}"}`);
 
       document.getElementById("user-input").value = "";
+    }
+
+    function xDown() {
+      if (xok) {
+        console.log("xdown");
+        connection.send(`{ "action": "sendmessage", "data": "xd"}`);
+        let playCount = document.getElementById("playCount");
+        playCount.value = parseInt(playCount.value) - 1;
+      }
+    }
+    function xUp() {
+      if (xok) {
+        connection.send(`{ "action": "sendmessage", "data": "x"}`);
+        xok = false;
+      }
+    }
+    function yDown() {
+      if (yok) {
+        connection.send(`{ "action": "sendmessage", "data": "yd"}`);
+      }
+    }
+    function yUp() {
+      if (yok) {
+        connection.send(`{ "action": "sendmessage", "data": "y"}`);
+        yok = false;
+      }
     }
 
     document.getElementById("send-button").addEventListener("click", processUserInput);
