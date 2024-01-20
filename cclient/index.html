@@ -146,20 +146,20 @@
         playCount.value = parseInt(playCount.value) - 1;
       }
     }
-    function xUp() {
+    function xUp(e) {
       e.preventDefault();
       if (xok) {
         connection.send(`{ "action": "sendmessage", "data": "x"}`);
         xok = false;
       }
     }
-    function yDown() {
+    function yDown(e) {
       e.preventDefault();
       if (yok) {
         connection.send(`{ "action": "sendmessage", "data": "yd"}`);
       }
     }
-    function yUp() {
+    function yUp(e) {
       e.preventDefault();
       if (yok) {
         connection.send(`{ "action": "sendmessage", "data": "y"}`);
