@@ -14,13 +14,16 @@ const disconnect = () => {
     conn.disconnect();
   }
   music.pause();
-  document.getElementById("video-container").style.visibility = "hidden";
-  document.getElementById("controller").style.visibility = "hidden";
+  document.getElementById("video-container").style.display ="none";
+  document.getElementById("controller").style.display ="none";
   document.getElementById("startButton").style.visibility = "hidden";
 }
 
 const startConn = async () => {
   document.getElementById("startButton").style.visibility = "hidden";
+  var element = document.documentElement;
+  var bottom = element.scrollHeight - element.clientHeight;
+  window.scroll(0, bottom);
   //let setting = structuredClone(data.clientSetting);
   let json = {
     audio: setting.audio,
@@ -47,5 +50,6 @@ const startConn = async () => {
     connection.send(`{ "action": "sendmessage", "data": {"cmd": "disconnect"} }`);
     const chatOutput = document.getElementById("chat-output");
     chatOutput.innerHTML += `<strong>$</strong> <font color="red">Connection Error!!!!!!</font><br />`;
+    chatOutput.scrollTop = chatOutput.scrollHeight;
   }
 };
