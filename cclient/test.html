@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>cclient</title>
+  <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico">
+  <style>
+    /* スタイルの追加 */
+    body {
+        background-color: black;
+        color: white;
+        position: relative;
+    }
+    #video-container {
+      width: 640px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    #controller {
+      width: 640px;
+      margin: 0em auto 5em;
+      text-align: center;
+    }
+    #shell-container {
+      width: 640px;
+      margin: 20px auto;
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
+  </style>
+  <!---- <script type="module" src="./jquery.js"></script> -->
+  <script src="./ayame.js" defer></script>
+  <script src="./qs.min.js" defer></script>
+  <script src="./main2.js" defer></script>
+</head>
+<body>
+
+  <div id="shell-container" style="height: 300px; overflow: auto;">
+    <div id="chat-output" style="height: 275px;align-items:flex-end;overflow:auto;"></div>
+    <input type="text" id="user-input" placeholder="Imput message..." style="width: 550px;">
+    <button id="send-button">submit</button>
+  </div>
+
+  <div id="video-container">
+    <video id="remote-video" autoplay playsinline controls style="width: 640px; height: 480px; border: 1px solid black;">
+      Your browser does not support the video tag.
+    </video>
+  </div>
+  <div id="controller">
+    <input type="text" id="playCount" style="width:30px;" readonly> play
+    <button id="moveX" onmousedown="xDown(event)" onmouseup="xUp(event)" ontouchstart="xDown(event)" ontouchend="xUp(event)">X move</button>
+    <button id="moveY" onmousedown="yDown(event)" onmouseup="yUp(event)" ontouchstart="yDown(event)" ontouchend="yUp(event)">Y move</button>
+  </div>
+  <button id="startButton" onclick="startConn();" style="width:600px;height:300px;position:absolute;top:0;left:0;right:0;margin:auto;visibility:hidden;">
+    <p>このボタンを押したらスタートします</p>
+    <p>Press this button to start.</p>
+  </button>
+
+  <script>
+    xok = false;
+    yok = false;
+    document.getElementById("playCount").value = 0;
+    //var connection = new WebSocket("wss://wkc8zyqg5d.execute-api.ap-northeast-1.amazonaws.com/production");
+    connection = new WebSocket("wss://wkc8zyqg5d.execute-api.ap-northeast-1.amazonaws.com/production");
+    connection.onopen = function(event) {
+      let adminKey = getParam('adminKey');
+      connection.send(`{ "action": "sendmessage", "data": {"cmd": "getCraneId", "adminKey": "${adminKey}"} }`);
+    };
+    connection.onerror = function(error) {
+        //console.log("エラー発生");
+        //console.log(error);
+    };
+    connection.onmessage = function(event) {
+        console.log(event);
+        if (event.data == "authenticated.") {
+          const chatOutput = document.getElementById("chat-output");
+          chatOutput.innerHTML += `<strong>$</strong> Logged In. Please wait a minute or Reload or Unavailable.<br />`;
+          connection.send(`{ "action": "sendmessage", "data": {"cmd": "hello"}}`);
+          console.log('-> %s', `{ "action": "sendmessage", "data": {"cmd": "hello"}}`);
+          return;
+        }
+        try {
+          data = JSON.parse(event.data);
+          if (data.cmd == "xlamp") {
+            if(data.value == 1){
+              document.getElementById("moveX").style.backgroundColor = "#FFFF88 ";
+            }else{
+              document.getElementById("moveX").style.backgroundColor = "#e7e7e7";
+            }
+          }else if (data.cmd == "ylamp") {
+            if(data.value == 1){
+              document.getElementById("moveY").style.backgroundColor = "#FFFF88 ";
+            }else{
+              document.getElementById("moveY").style.backgroundColor = "#e7e7e7";
+            }
+          }else if (data.cmd == "ready") {
+            connection.send(`{ "action": "sendmessage", "data": {"cmd": "ready"}}`);
+            console.log('-> %s', `{ "action": "sendmessage", "data": {"cmd": "ready"}}`);
+          }else if (data.clientSetting) {
+            document.getElementById("moveX").style.backgroundColor = "#e7e7e7";
+            document.getElementById("moveY").style.backgroundColor = "#e7e7e7";
+            document.getElementById("startButton").style.visibility = "visible";
+            //connection.send(`{ "action": "sendmessage", "data": {"cmd": "go"}}`);
+            //console.log('-> %s', `{ "action": "sendmessage", "data": {"cmd": "go"}}`);
+            setting = data.clientSetting;
+            //startConn();
+          }else if (data.cmd == "disconnect") {
+            const chatOutput = document.getElementById("chat-output");
+            chatOutput.innerHTML += `<strong>$</strong> End your Game. Just minute wait and it will reconnect.<br />`;
+            chatOutput.scrollTop = chatOutput.scrollHeight;
+            disconnect();
+          }else if (data.cmd == "xready") {
+            const chatOutput = document.getElementById("chat-output");
+            chatOutput.innerHTML += `<strong>$</strong> X Button Ready.<br />`;
+            chatOutput.scrollTop = chatOutput.scrollHeight;
+            xok = true;
+          }else if (data.cmd == "yready") {
+            const chatOutput = document.getElementById("chat-output");
+            chatOutput.innerHTML += `<strong>$</strong> Y Button Ready.<br />`;
+            chatOutput.scrollTop = chatOutput.scrollHeight;
+            yok = true;
+          }else if (data.cmd == "credit") {
+            const chatOutput = document.getElementById("chat-output");
+            chatOutput.innerHTML += `<strong>$</strong> GET CREDIT ${data.credit}.<br />`;
+            chatOutput.scrollTop = chatOutput.scrollHeight;
+            document.getElementById("playCount").value = data.credit;
+          }else if (data.cmd == "clear") {
+            const chatOutput = document.getElementById("chat-output");
+            chatOutput.innerHTML += `<strong>$</strong> <font color="green">Congratulations!!!!!!!!!!!!</font><br />`;
+            chatOutput.scrollTop = chatOutput.scrollHeight;
+          }else if (data.cmd == "ping") {
+            connection.send(`{ "action": "sendmessage", "data": {"cmd": "pong"}}`);
+          }
+        } catch (error) {
+          console.log(error);
+        }
+    };
+
+    function processUserInput() {
+      const userInput = document.getElementById("user-input").value;
+      const chatOutput = document.getElementById("chat-output");
+      chatOutput.innerHTML += `<strong>$</strong> ${userInput}<br />`;
+      connection.send(`{ "action": "sendmessage", "data": "${userInput}"}`);
+      console.log('-> %s', `{ "action": "sendmessage", "data": "${userInput}"}`);
+
+      document.getElementById("user-input").value = "";
+      chatOutput.scrollTop = chatOutput.scrollHeight;
+    }
+
+    function xDown(e) {
+      e.preventDefault();
+      if (xok) {
+        connection.send(`{ "action": "sendmessage", "data": "xd"}`);
+        let playCount = document.getElementById("playCount");
+        playCount.value = parseInt(playCount.value) - 1;
+      }
+    }
+    function xUp(e) {
+      e.preventDefault();
+      if (xok) {
+        connection.send(`{ "action": "sendmessage", "data": "x"}`);
+        xok = false;
+      }
+    }
+    function yDown(e) {
+      e.preventDefault();
+      if (yok) {
+        connection.send(`{ "action": "sendmessage", "data": "yd"}`);
+      }
+    }
+    function yUp(e) {
+      e.preventDefault();
+      if (yok) {
+        connection.send(`{ "action": "sendmessage", "data": "y"}`);
+        yok = false;
+      }
+    }
+
+    document.getElementById("send-button").addEventListener("click", processUserInput);
+    document.getElementById("user-input").addEventListener("keypress", function(event) {
+      if (event.key === "Enter") {
+        processUserInput();
+      }
+    });
+  </script>
+</body>
+</html>
