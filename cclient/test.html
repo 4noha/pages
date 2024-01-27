@@ -49,6 +49,11 @@
     <input type="text" id="playCount" style="width:30px;" readonly> play
     <button id="moveX" onmousedown="xDown(event)" onmouseup="xUp(event)" ontouchstart="xDown(event)" ontouchend="xUp(event)">X move</button>
     <button id="moveY" onmousedown="yDown(event)" onmouseup="yUp(event)" ontouchstart="yDown(event)" ontouchend="yUp(event)">Y move</button>
+    <button id="Xready" onmousedown="Xready(event)">Xready</button>
+    <button id="Yready" onmousedown="Yready(event)">Yready</button>
+    <button id="Coin" onmousedown="Coin(event)">Coin</button>
+    <button id="Credit" onmousedown="Credit(event)">Credit</button>
+    <button id="Disconnect" onmousedown="Disconnect(event)">Disconnect</button>
   </div>
   <button id="startButton" onclick="startConn();" style="width:600px;height:300px;position:absolute;top:0;left:0;right:0;margin:auto;visibility:hidden;">
     <p>このボタンを押したらスタートします</p>
@@ -101,6 +106,8 @@
             document.getElementById("startButton").style.visibility = "visible";
             //connection.send(`{ "action": "sendmessage", "data": {"cmd": "go"}}`);
             //console.log('-> %s', `{ "action": "sendmessage", "data": {"cmd": "go"}}`);
+            craneId = data.clientSetting.craneId;
+            console.log(data.clientSetting);
             setting = data.clientSetting;
             //startConn();
           }else if (data.cmd == "disconnect") {
@@ -148,31 +155,44 @@
 
     function xDown(e) {
       e.preventDefault();
-      if (xok) {
-        connection.send(`{ "action": "sendmessage", "data": "xd"}`);
-        let playCount = document.getElementById("playCount");
-        playCount.value = parseInt(playCount.value) - 1;
-      }
+      connection.send(`{ "action": "sendmessage", "data": "xd"}`);
+      let playCount = document.getElementById("playCount");
+      playCount.value = parseInt(playCount.value) - 1;
     }
     function xUp(e) {
       e.preventDefault();
-      if (xok) {
-        connection.send(`{ "action": "sendmessage", "data": "x"}`);
-        xok = false;
-      }
+      connection.send(`{ "action": "sendmessage", "data": "x"}`);
+      xok = false;
     }
     function yDown(e) {
       e.preventDefault();
-      if (yok) {
-        connection.send(`{ "action": "sendmessage", "data": "yd"}`);
-      }
+      connection.send(`{ "action": "sendmessage", "data": "yd"}`);
     }
     function yUp(e) {
       e.preventDefault();
-      if (yok) {
-        connection.send(`{ "action": "sendmessage", "data": "y"}`);
-        yok = false;
-      }
+      connection.send(`{ "action": "sendmessage", "data": "y"}`);
+      yok = false;
+    }
+    function Xready(e) {
+      e.preventDefault();
+      connection.send(`{ "action": "sendmessage", "data": "xready${craneId}"`);
+    }
+    function Yready(e) {
+      e.preventDefault();
+      connection.send(`{ "action": "sendmessage", "data": "yready${craneId}"`);
+    }
+    function Coin(e) {
+      e.preventDefault();
+      connection.send(`{ "action": "sendmessage", "data": "coin${craneId}"`);
+      console.log('-> %s', `{ "action": "sendmessage", "data": "coin${craneId}"`);
+    }
+    function Credit(e) {
+      e.preventDefault();
+      connection.send(`{ "action": "sendmessage", "data": "credit${craneId}"`);
+    }
+    function Disconnect(e) {
+      e.preventDefault();
+      connection.send(`{ "action": "sendmessage", "data": "disconnect${craneId}"`);
     }
 
     document.getElementById("send-button").addEventListener("click", processUserInput);

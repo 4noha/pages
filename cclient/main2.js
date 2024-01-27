@@ -4,6 +4,7 @@ let clientId = null;
 let videoCodec = null;
 let audioCodec = null;
 let signalingKey = null;
+craneId = null;
 
 const options = {};
 const remoteVideo = document.querySelector('#remote-video');
