@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>フローリング厚み計算器</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    .result-item {
+      transition: background-color 0.3s;
+    }
+    .result-item:hover {
+      background-color: #f8f9fa;
+    }
+  </style>
+</head>
+<body class="bg-light py-5">
+  <div class="container">
+    <h1 class="text-center mb-4">畳→フローリング 計算器</h1>
+    <div class="card shadow p-4 mb-4">
+      <h1 class="mb-4">畳→フローリング 厚み計算器</h1>
+      <div class="text-center mb-4">
+        <img src="height.png" alt="畳→フローリング 厚み計算器の動作イメージ" class="img-fluid" style="max-width: 40%; height: auto;">
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="tatamiHeight" class="form-label">畳の高さ (mm)</label>
+          <input type="number" class="form-control" id="tatamiHeight" value="50" onchange="window.joistCalculator.calculateOptions()" onclick="this.select()">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label for="flooringHeight" class="form-label">フローリング材の厚み (mm)</label>
+          <div class="input-group">
+            <input type="number" class="form-control" id="flooringHeight" value="4" onchange="window.joistCalculator.calculateOptions()" onclick="this.select()">
+            <div class="input-group-text">
+              <input class="form-check-input mt-0" type="checkbox" id="excludeFlooring" onchange="window.joistCalculator.calculateOptions()">
+              <label class="form-check-label ms-2 mb-0" for="excludeFlooring">計算から除外</label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="joistSizes" class="form-label">規格根太サイズリスト (幅x高さ mm)</label>
+          <textarea class="form-control" id="joistSizes" rows="4" onchange="window.joistCalculator.calculateOptions()" onkeyup="window.joistCalculator.calculateOptions()" onclick="this.select()">35,35,野縁
+30,40,野縁
+30,45,垂木
+30,50,垂木
+45,45,垂木
+45,55,根太/垂木
+45,60,垂木
+15,45,胴縁
+16,40,胴縁
+17,45,胴縁
+18,45,胴縁
+21,45,胴縁
+21,36,胴縁
+16,40,胴縁
+19,38,1x2材
+38,38,2x2材
+38,89,2x4材
+24,48,桟木
+25,50,桟木
+27,60,桟木
+45,90,筋交
+</textarea>
+          <div class="form-text">1行に1つ、「幅,高さ」または「幅,高さ,名前」の形式で入力</div>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label for="plywoodThicknesses" class="form-label">規格合板の厚みリスト (mm)</label>
+          <textarea class="form-control" id="plywoodThicknesses" rows="4" onchange="window.joistCalculator.calculateOptions()" onkeyup="window.joistCalculator.calculateOptions()" onclick="this.select()">7.5,9,12,15,18</textarea>
+          <div class="form-text">カンマ区切りで入力</div>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <h5 id="resultTitle">組み合わせ候補</h5>
+        <ul class="list-group" id="resultList"></ul>
+      </div>
+      <div class="mt-3 small text-muted">
+        <p><strong>入力形式について：</strong></p>
+        <ul>
+          <li>根太サイズ：各行に「幅,高さ」または「幅,高さ,名前」の形式で入力してください（例：「35,45」または「38,89,2x4材」）</li>
+          <li>合板の厚み：カンマ区切りで入力してください（例：「7.5,9,12」）</li>
+        </ul>
+      </div>
+    </div>
+    
+    <!-- 根太本数計算器セクション -->
+    <div class="card shadow p-4">
+      <h1 class="mb-4">根太本数計算器</h1>
+      <!-- 根太本数計算器の動作イメージ -->
+      <div class="row mb-4">
+        <div class="col-md-12 text-center">
+          <img src="neda.png" alt="根太本数計算器の動作イメージ" class="img-fluid" style="max-width: 60%; height: auto;">
+        </div>
+      </div>
+      
+      <!-- 配置図 -->
+      <div class="row mb-4">
+        <div class="col-md-12">
+          <h5 class="mb-3">根太とスタイロフォームの配置図</h5>
+          <div id="joistLayoutCanvas" class="border" style="width: 100%; height: 300px; background-color: #f8f9fa;">
+            <div class="text-center p-3 text-muted">
+              <p>計算結果に基づく配置図がここに表示されます</p>
+              <p>（計算を実行すると自動的に描画されます）</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="roomWidth" class="form-label">畳の枠内の幅 (mm)</label>
+          <input type="number" class="form-control" id="roomWidth" value="3950" min="1" onchange="window.joistCalculator.calculateJoistCount()" onclick="this.select()">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label for="roomDepth" class="form-label">畳の枠内の奥行き (mm)</label>
+          <input type="number" class="form-control" id="roomDepth" value="3950" min="1" onchange="window.joistCalculator.calculateJoistCount()" onclick="this.select()">
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="joistLength" class="form-label">根太材の長さ (mm)</label>
+          <input type="number" class="form-control" id="joistLength" value="3000" min="1" onchange="window.joistCalculator.calculateJoistCount()" onclick="this.select()">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label for="joistSpacing" class="form-label">スタイロフォームの幅 (mm)</label>
+          <input type="number" class="form-control" id="joistSpacing" value="303" min="1" max="303" onchange="window.joistCalculator.calculateJoistCount()" onclick="this.select()">
+          <div class="form-text">合板を根太に打ち付けるため根太中心から根太の中心までの距離が303mmになるように調整するのが一般的です</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12 mb-3">
+          <label for="selectedJoistSize" class="form-label">根太サイズ</label>
+          <div class="input-group">
+            <select class="form-select" id="selectedJoistSize" onchange="window.joistCalculator.calculateJoistCount()">
+              <!-- 根太サイズのオプションはJavaScriptで動的に生成 -->
+            </select>
+            <div class="input-group-text">
+              <input class="form-check-input mt-0" type="checkbox" id="toggleJoistDimensions" onchange="window.joistCalculator.calculateJoistCount()">
+              <label class="form-check-label ms-2 mb-0" for="toggleJoistDimensions">縦横入替</label>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row">
+        <div class="col-md-12 mb-3">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="ecoMode" onchange="window.joistCalculator.calculateJoistCount()">
+            <label class="form-check-label" for="ecoMode">
+              エコモード（端材の再利用を最大化）
+            </label>
+            <div class="form-text">
+              端材を組み合わせて根太を作成することを許可します。これにより材料の無駄を減らせますが、床鳴りのリスクが少し高まります。
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <h5>計算結果</h5>
+        <div class="card">
+          <div class="card-body">
+            <p id="joistCountResult">必要な根太材の本数: 計算中...</p>
+            <p id="joistTotalLength">根太材の合計長さ: 計算中...</p>
+            <p id="styrofoamWidth">スタイロフォームの幅: 計算中...</p>
+            <p id="lastStyrofoamWidth">最後のスタイロフォームの幅: 計算中...</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="mt-4">
+        <h5>切り出しシミュレーション</h5>
+        <div class="card">
+          <div class="card-body">
+            <div class="alert alert-info">
+              <i class="bi bi-info-circle"></i> 根太材から効率よく切り出す設計図です。
+            </div>
+            <div id="joistCuttingSummary" class="alert alert-success mb-3">
+              根太材の必要本数: 計算中...
+            </div>
+            <div id="joistCuttingSimulation" class="text-center">
+              <p class="text-muted">計算中...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- スタイロフォームパーツ一覧セクション -->
+    <div class="card shadow p-4 mt-4">
+      <h1 class="mb-4">スタイロフォームパーツ一覧</h1>
+      <div class="alert alert-info mb-3">
+        <i class="bi bi-info-circle"></i> スタイロフォーム材は標準サイズ（910mm x 1820mm）が前提です。
+      </div>
+
+      <div class="mt-4">
+        <h5>スタイロフォームパーツ一覧</h5>
+        <div class="card">
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                  <tr>
+                    <th>種類</th>
+                    <th>サイズ (mm)</th>
+                    <th>必要枚数</th>
+                    <th>合計面積 (m²)</th>
+                  </tr>
+                </thead>
+                <tbody id="styrofoamPartsList">
+                  <tr>
+                    <td colspan="4" class="text-center">計算中...</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr class="table-secondary">
+                    <th colspan="2">合計</th>
+                    <th id="totalStyrofoamPieces">-</th>
+                    <th id="totalStyrofoamArea">-</th>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <!-- スタイロフォームパーツ一覧の合計情報は切り出しシミュレーションセクションに表示 -->
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <h5>切り出しシミュレーション</h5>
+        <div class="card">
+          <div class="card-body">
+            <div class="alert alert-info">
+              <i class="bi bi-info-circle"></i> 標準サイズ（910mm x 1820mm）のスタイロフォームから効率よく切り出す設計図です。
+            </div>
+            <div id="styrofoamSummary" class="alert alert-success mb-3">
+              スタイロフォーム材の必要枚数: 計算中...
+            </div>
+            <div id="cuttingSimulation" class="text-center">
+              <p class="text-muted">計算中...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/utils.js"></script>
+  <script src="js/joistCalculatorUtils.js"></script>
+  <script src="js/joistCalculator.js"></script>
+  <script src="js/joistCuttingSimulation.js"></script>
+  <script src="js/styrofoamCalculator.js"></script>
+  <script src="js/visualizer.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
