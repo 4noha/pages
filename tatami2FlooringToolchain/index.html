@@ -245,6 +245,52 @@
         </div>
       </div>
     </div>
+    
+    <!-- 合板カットシミュレーションセクション -->
+    <div class="card shadow p-4 mt-4">
+      <h1 class="mb-4">合板カットシミュレーションβ</h1>
+      <div class="alert alert-info mb-3">
+        <i class="bi bi-info-circle"></i> 畳の枠内の寸法に合わせて、標準サイズ（910mm x 1820mm）の合板をざっくり切り出すシミュレーションです。
+      </div>
+      
+      <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+          <label for="plywoodRoomWidth" class="form-label">畳の枠内の幅 (mm)</label>
+          <input type="number" class="form-control" id="plywoodRoomWidth" readonly>
+          <div class="form-text">根太本数計算器の値と同期しています</div>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label for="plywoodRoomDepth" class="form-label">畳の枠内の奥行き (mm)</label>
+          <input type="number" class="form-control" id="plywoodRoomDepth" readonly>
+          <div class="form-text">根太本数計算器の値と同期しています</div>
+        </div>
+      </div>
+      
+      <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+          <label for="plywoodWidth" class="form-label">合板の幅 (mm)</label>
+          <input type="number" class="form-control" id="plywoodWidth" value="910" readonly>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label for="plywoodLength" class="form-label">合板の長さ (mm)</label>
+          <input type="number" class="form-control" id="plywoodLength" value="1820" readonly>
+        </div>
+      </div>
+      
+      <div class="mt-4">
+        <h5>合板カット結果</h5>
+        <div class="card">
+          <div class="card-body">
+            <div id="plywoodCuttingSummary" class="alert alert-success mb-3">
+              合板の必要枚数: 計算中...
+            </div>
+            <div id="plywoodCuttingSimulation" class="text-center">
+              <p class="text-muted">計算中...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="js/utils.js"></script>
@@ -253,6 +299,7 @@
   <script src="js/joistCuttingSimulation.js"></script>
   <script src="js/styrofoamCalculator.js"></script>
   <script src="js/visualizer.js"></script>
+  <script src="js/plywoodCuttingSimulation.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

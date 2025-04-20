@@ -17,4 +17,9 @@ document.addEventListener('DOMContentLoaded', function() {
     joistSizesElement.addEventListener('change', window.joistCalculator.syncJoistSizes);
     joistSizesElement.addEventListener('keyup', window.joistCalculator.syncJoistSizes);
   }
+  
+  // 合板カットシミュレーションを初期化
+  if (window.plywoodCuttingSimulation && typeof window.plywoodCuttingSimulation.init === 'function') {
+    window.plywoodCuttingSimulation.init();
+  }
 });
