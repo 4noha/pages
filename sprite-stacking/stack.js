@@ -1,9 +1,9 @@
 "use strict";
-// 三面図 → スライスの積層。design.js の絵（front/side/back）の画素だけを読む。
+// 四面図 → スライスの積層。design.js の絵（front/side/sideL/back）の画素だけを読む。
 // 各パーツの高さ z の1行について、正面の絵の横幅 × 横の絵の奥行 に内接する丸い断面を作り、
-// 面の向きで色の出所を決める（前向き=正面の絵、後ろ向き=背面の絵、横向き=横の絵）。
+// 面の向きで色の出所を決める（前向き=正面の絵、後ろ向き=背面の絵、横向き=その側の横の絵。sideL が無ければ左右とも side）。
 const run = row => { let a = -1, b = -1; row.forEach((v, i) => { if (v) { if (a < 0) a = i; b = i; } }); return a < 0 ? null : [a, b]; };
-function buildVox() {
+function buildVox(owner) {                                       // owner を渡すと、各画素がどのパーツ由来かも記録する
   const vox = Array.from({length:H}, () => Array.from({length:D}, () => Array(W).fill(null)));
   for (const p of parts) for (let z = 0; z < H; z++) {
     const fx = run(p.front[z]), sy = run(p.side[z]); if (!fx || !sy) continue;
@@ -11,9 +11,10 @@ function buildVox() {
     for (let y = sy[0]; y <= sy[1]; y++) for (let x = fx[0]; x <= fx[1]; x++) {
       const dx = (x + .5 - cx) / rx, dy = (y + .5 - cy) / ry, ax = Math.abs(dx), ay = Math.abs(dy);
       if (Math.pow(ax, p.n) + Math.pow(ay, p.n) > 1.15) continue;
-      const f = p.front[z][x], b = p.back[z][x], s = p.side[z][y];
+      const f = p.front[z][x], b = p.back[z][x], s = (dx > 0 && p.sideL ? p.sideL : p.side)[z][y];   // x が大きい側 = 本人の左
       if (!f || !s) continue;                                     // 絵に穴があれば立体も抜く（前髪の隙間など）
       vox[z][y][x] = (ax > ay ? s : dy < 0 ? f : b) || f || b || s;
+      if (owner) owner[z][y][x] = p.name;
     }
   }
   return vox;
@@ -51,14 +52,14 @@ function drawStack(ctx, layers, cx, cy, deg, tilt, sp, Z = 1) {   // Z: 描画�
     }
   });
 }
-// 三面図の1枚を合成する（奥のパーツから順に重ねる）
+// 四面図の1枚を合成する（奥のパーツから順に重ねる）。kind: front / sideL(左横。本人の左から見るので前が左向き) / side(右横。前が右向き) / back
 function compose(kind) {
-  const w = kind === 'side' ? D : W, out = Array.from({length:H}, () => Array(w).fill(null));
+  const w = kind === 'side' || kind === 'sideL' ? D : W, out = Array.from({length:H}, () => Array(w).fill(null));
   const mean = g => { let s = 0, n = 0; g.forEach(r => r.forEach((v, i) => { if (v) { s += i; n++; } })); return n ? s / n : 0; };
   const info = parts.map((p, i) => ({p, i, my: p.depth ?? mean(p.side), mx: mean(p.front)}));
   const r = Math.round;                                            // 同じ奥行なら後に書いたパーツを上に
-  info.sort((A, B) => (kind === 'front' ? r(B.my) - r(A.my) : kind === 'back' ? r(A.my) - r(B.my) : r(B.mx) - r(A.mx)) || A.i - B.i);
-  for (const {p} of info) p[kind].forEach((r, z) => r.forEach((c, a) => { if (c) out[z][kind === 'back' ? W - 1 - a : a] = c; }));
+  info.sort((A, B) => (kind === 'front' ? r(B.my) - r(A.my) : kind === 'back' ? r(A.my) - r(B.my) : kind === 'sideL' ? r(A.mx) - r(B.mx) : r(B.mx) - r(A.mx)) || A.i - B.i);
+  for (const {p} of info) (p[kind] ?? p.side).forEach((r, z) => r.forEach((c, a) => { if (c) out[z][kind === 'back' ? W - 1 - a : kind === 'side' ? D - 1 - a : a] = c; }));
   return out;
 }
 function drawView(ctx, v, x0, y0) { v.forEach((r, z) => r.forEach((c, a) => { if (c) { ctx.fillStyle = c; ctx.fillRect(x0 + a, y0 + H - 1 - z, 1, 1); } })); }
