@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>sprite-stacking — 東雲はつり</title>
+<style>
+  :root { --bg:#14111f; --panel:#201a33; --fg:#e9e4ff; --mut:#9a90c4; --acc:#b79df0; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 system-ui,sans-serif; }
+  main { max-width:1040px; margin:0 auto; padding:16px; display:grid; gap:16px; }
+  h1 { font-size:18px; margin:0; } h2 { font-size:14px; margin:0 0 6px; color:var(--mut); font-weight:600; }
+  p.sub { margin:0; color:var(--mut); }
+  .row { display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start; }
+  canvas { image-rendering:pixelated; background:var(--panel); border-radius:8px; max-width:100%; }
+  #stage { width:400px; height:440px; cursor:grab; touch-action:none; }
+  #sheet { width:min(100%,500px); } #strip { width:min(100%,1008px); }
+  .panel { display:grid; gap:10px; min-width:240px; flex:1; }
+  label { display:grid; gap:2px; color:var(--mut); }
+  input[type=range] { width:100%; accent-color:var(--acc); }
+  button { background:var(--acc); color:#1b1230; border:0; border-radius:6px; padding:8px 12px; font-weight:600; cursor:pointer; }
+  .cap { display:flex; color:var(--mut); font-size:12px; width:min(100%,500px); } .cap span { text-align:center; }
+</style>
+</head>
+<body>
+<main>
+  <h1>sprite stacking — 東雲はつり（2.5頭身）</h1>
+  <p class="sub">三面図（正面・横・背面）を設計し、その絵を高さ1行ずつスライスにして1pxずつ積み、回転させる。ドラッグの左右で向き、上下で見下ろし角。</p>
+  <div class="row">
+    <div>
+      <h2>積層して回したもの</h2>
+      <canvas id="stage" width="240" height="264"></canvas>
+    </div>
+    <div class="panel">
+      <div>
+        <h2>設計した三面図（正面 32×48 / 横 28×48 / 背面 32×48）</h2>
+        <canvas id="sheet" width="104" height="52"></canvas>
+        <div class="cap"><span style="flex:36">正面</span><span style="flex:32">横</span><span style="flex:36">背面</span></div>
+      </div>
+      <label><span>角度 <span id="angv">0</span>°</span><input id="ang" type="range" min="0" max="359" value="25"></label>
+      <label><span>見下ろし角 <span id="elv">30</span>°（0=真横、90=真上、マイナス=下から）</span><input id="el" type="range" min="-90" max="90" value="30"></label>
+      <label><span>スライス間隔 ×<span id="expv">1.0</span></span><input id="exp" type="range" min="10" max="40" value="10"></label>
+      <label><span>描画倍率（設計は等倍のまま、回転だけ細かく描く）
+        <select id="zoom"><option value="1">×1（GBA等倍）</option><option value="2">×2</option><option value="3" selected>×3</option></select></span></label>
+      <label><span><input id="auto" type="checkbox" checked> 自動回転</span></label>
+      <label><span><input id="ol" type="checkbox" checked> 輪郭線</span></label>
+      <div class="row"><button id="dl3">三面図をPNGで保存</button><button id="dl16">16方向シートをPNGで保存</button></div>
+    </div>
+  </div>
+  <div>
+    <h2>8方向（45°刻み・いまの見下ろし角）</h2>
+    <canvas id="strip" width="768" height="136"></canvas>
+  </div>
+</main>
+<script src="design.js"></script>
+<script src="stack.js"></script>
+<script>
+"use strict";
+const $ = id => document.getElementById(id), q = new URLSearchParams(location.search);
+const sv = surfaceVoxels(buildVox());
+const stage = $('stage'), g = stage.getContext('2d', {willReadFrequently:true});
+let angle = +(q.get('a') ?? 25), elev = +(q.get('e') ?? 30), spread = 1, auto = q.get('auto') !== '0', ol = true;
+
+const LW = 80, LH = 88;                                       // ステージの論理サイズ（GBA等倍の画素数）
+function sprite(ctx, x0, y0, w, h, deg, sp, Z) {              // 積層を投影 → 輪郭 → 影（x0..h は実画素）
+  ctx.putImageData(renderVox(sv, w, h, deg, elev, sp, Z), x0, y0);
+  if (ol) for (let k = 0; k < Z; k++) outline(ctx, x0, y0, w, h);
+  if (elev > 2) {                                             // 足元の影は絵の下に敷く
+    const e = elev * Math.PI / 180, gy = y0 + h / 2 + (H / 2 * sp) * Math.cos(e) * Z;
+    ctx.save(); ctx.beginPath(); ctx.rect(x0, y0, w, h); ctx.clip(); ctx.globalCompositeOperation = 'destination-over';
+    ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(x0 + w / 2, gy, 12 * Z, 12 * Z * Math.sin(e), 0, 0, 7); ctx.fill(); ctx.restore();
+  }
+}
+let Z = 3;
+function render() {
+  if (stage.width !== LW * Z) { stage.width = LW * Z; stage.height = LH * Z; }
+  g.clearRect(0, 0, stage.width, stage.height); sprite(g, 0, 0, stage.width, stage.height, angle, spread, Z);
+}
+function strip() {
+  const c = $('strip').getContext('2d', {willReadFrequently:true}); c.clearRect(0, 0, 768, 136);
+  for (let i = 0; i < 8; i++) sprite(c, i * 96, 0, 96, 136, i * 45, 1, 2);
+}
+function sheet() {
+  const c = $('sheet').getContext('2d', {willReadFrequently:true}); c.clearRect(0, 0, 104, 52);
+  drawView(c, compose('front'), 2, 2); drawView(c, compose('side'), 38, 2); drawView(c, compose('back'), 70, 2);
+  outline(c, 0, 0, 104, 52);
+}
+function sync() { const a = Math.round(angle) % 360; $('ang').value = a; $('angv').textContent = a; $('el').value = Math.round(elev); $('elv').textContent = Math.round(elev); }
+const stopAuto = () => { auto = false; $('auto').checked = false; };
+$('auto').checked = auto;
+$('ang').oninput = e => { angle = +e.target.value; stopAuto(); sync(); render(); };
+$('el').oninput = e => { elev = +e.target.value; sync(); render(); strip(); };
+$('exp').oninput = e => { spread = e.target.value / 10; $('expv').textContent = spread.toFixed(1); render(); };
+$('auto').onchange = e => auto = e.target.checked;
+$('zoom').onchange = e => { Z = +e.target.value; render(); };
+$('ol').onchange = e => { ol = e.target.checked; render(); strip(); };
+let drag = null;
+stage.onpointerdown = e => { drag = {x:e.clientX, y:e.clientY, a:angle, e:elev}; stage.setPointerCapture(e.pointerId); stopAuto(); };
+stage.onpointermove = e => { if (drag) { angle = (drag.a + (e.clientX - drag.x) * 0.8 + 3600) % 360; elev = Math.max(-90, Math.min(90, drag.e + (e.clientY - drag.y) * 0.5)); sync(); render(); } };
+stage.onpointerup = () => { drag = null; strip(); };
+let last = 0;
+(function loop(t) { if (auto) { angle = (angle + (t - last) * 0.04) % 360; sync(); render(); } last = t; requestAnimationFrame(loop); })(0);
+function save(cv, name, scale) {
+  const o = document.createElement('canvas'); o.width = cv.width * scale; o.height = cv.height * scale;
+  const c = o.getContext('2d'); c.imageSmoothingEnabled = false; c.drawImage(cv, 0, 0, o.width, o.height);
+  o.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name; a.click(); });
+}
+$('dl3').onclick = () => save($('sheet'), 'hatsuri-sanmenzu.png', 8);
+$('dl16').onclick = () => {
+  const cv = document.createElement('canvas'); cv.width = 16 * 48 * Z; cv.height = 68 * Z;
+  const c = cv.getContext('2d', {willReadFrequently:true});
+  for (let i = 0; i < 16; i++) sprite(c, i * 48 * Z, 0, 48 * Z, 68 * Z, i * 22.5, 1, Z);
+  save(cv, 'hatsuri-stack-16.png', 1);
+};
+sheet(); strip(); sync(); render();
+</script>
+</body>
+</html>
